@@ -8,11 +8,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env['PORT'] || 3000;
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+const supabaseUrl = process.env['SUPABASE_URL']!;
+const supabaseServiceKey = process.env['SUPABASE_SERVICE_KEY']!;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_KEY');
@@ -27,8 +27,8 @@ app.use(express.json());
 app.use(express.raw({ type: 'application/json' }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+app.get('/health', (_req, res) => {
+  return res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
 // OpenPhone webhook signature verification
@@ -49,11 +49,11 @@ function verifyOpenPhoneSignature(payload: string, signature: string, secret: st
 }
 
 // OpenPhone webhook endpoint
-app.post('/webhook/openphone', async (req, res) => {
+app.post('/webhook/openphone', async (_req, res) => {
   try {
-    const signature = req.headers['x-openphone-signature'] as string;
-    const webhookSecret = process.env.OPENPHONE_WEBHOOK_SECRET;
-    const payload = JSON.stringify(req.body);
+    const signature = _req.headers['x-openphone-signature'] as string;
+    const webhookSecret = process.env['OPENPHONE_WEBHOOK_SECRET'];
+    const payload = JSON.stringify(_req.body);
 
     // Verify signature if secret is configured
     if (webhookSecret && signature) {
@@ -62,7 +62,7 @@ app.post('/webhook/openphone', async (req, res) => {
       }
     }
 
-    const webhookData = req.body;
+    const webhookData = _req.body;
     console.log('Received OpenPhone webhook:', JSON.stringify(webhookData, null, 2));
 
     // Extract contact and communication data
@@ -119,17 +119,17 @@ app.post('/webhook/openphone', async (req, res) => {
     }
 
     console.log(`Successfully processed ${communicationType} for contact: ${phoneNumber}`);
-    res.status(200).json({ success: true, message: 'Webhook processed successfully' });
+    return res.status(200).json({ success: true, message: 'Webhook processed successfully' });
   } catch (error) {
     console.error('Error processing OpenPhone webhook:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  return res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
